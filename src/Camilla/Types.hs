@@ -16,6 +16,7 @@ module Camilla.Types
   , Unit(..)
   , RAS(..)
   , Status(..)
+  , toSqlRows
   ) where
 
 import Camilla.Util
@@ -90,12 +91,18 @@ data Version
     = V1_25_2
     | V1_26_1
     | V1_28_0
-     deriving (Bounded, Eq, Ord, Show)
+     deriving (Bounded, Eq, Ord)
 
 _versionNumber = [(V1_25_2, 1), (V1_26_1, 2), (V1_28_0, 3)]
 instance Enum Version where
     fromEnum v = fromJust $ lookup v _versionNumber
     toEnum n = fromJust $ revLookup n _versionNumber
+
+instance Show Version where
+    show = \case
+        V1_25_2 -> "1.25.2"
+        V1_26_1 -> "1.26.1"
+        V1_28_0 -> "1.28.0"
 
 data Device
     = CoE
@@ -314,5 +321,16 @@ instance FromJSON Unit where
         String v -> pure . toEnum . read $ unpack v
         _ -> fail "Unit must be a numeric string."
 
+-- version: str, device: str, time: posixtime, dp-number: int, value: double/bool, unit: str
 toSqlRows :: Response -> M.HashMap JSONParamType [[SqlValue]]
-toSqlRows Response{..} = _
+toSqlRows Response {..} = fmap (map fromDataPoint) rdata
+  where
+    fromDataPoint DataPoint {..} =
+      toSql (show $ hversion rheader) :
+      toSql (show $ hdevice rheader) :
+      posixToSql (htimestamp rheader) :
+      toSql (fromIntegral dnumber :: Int) :
+      case dvalue of
+        AnalogValue{..} -> [toSql avalue, toSql $ show vunit]
+        DigitalValue{..} -> [toSql bvalue, toSql $ show vunit]
+
