@@ -32,6 +32,7 @@ import Numeric (readHex, showHex)
 import Numeric.Natural (Natural)
 import qualified Data.HashMap.Strict as M ((!), lookup, HashMap, toList, fromList)
 import Data.Text (unpack, Text)
+import Database.HDBC.SqlValue
 
 camillaCase = aesonDrop 1 pascalCase
 
@@ -69,21 +70,9 @@ data JSONParamType
 
 instance Hashable JSONParamType
 
-_jsonParamTypeString = [(Inputs, "I"), (Outputs, "O"), (DLInputs, "D"), (SystemGeneral, "Sg"), (SystemDate, "Sd"), (SystemTime, "St"), (SystemSun, "Ss"), (SystemPower, "Sp"), (NetworkAnalog, "Na"), (NetworkDigital, "Nd"), (MBus, "M"), (Modbus, "AM"), (KNX, "AK"), (LoggingAnalog, "La"), (LoggingDigital, "Ld")]
+_jsonParamTypeString = [ (Inputs, "I") , (Outputs, "O") , (DLInputs, "D") , (SystemGeneral, "Sg") , (SystemDate, "Sd") , (SystemTime, "St") , (SystemSun, "Ss") , (SystemPower, "Sp") , (NetworkAnalog, "Na") , (NetworkDigital, "Nd") , (MBus, "M") , (Modbus, "AM") , (KNX, "AK") , (LoggingAnalog, "La") , (LoggingDigital, "Ld")]
 instance Show JSONParamType where
     show p = fromJust (lookup p _jsonParamTypeString)
-
-parseJSONParamType :: (Monad m) => Text -> m JSONParamType
-parseJSONParamType = \case
-    "Inputs" -> pure Inputs
-    "Outputs" -> pure Outputs
-    _ -> fail "jsonparam not defined."
-
-instance FromJSON JSONParamType where
-    parseJSON = withText "JSONParamType" parseJSONParamType
-
-instance FromJSONKey JSONParamType where
-    fromJSONKey = FromJSONKeyTextParser parseJSONParamType
 
 data Response = Response
     { rheader :: Header
@@ -91,29 +80,17 @@ data Response = Response
     , rstatus :: Status
     } deriving (Eq, Show)
 
-instance FromJSON Response where
-    parseJSON = withObject "Response" $ \v -> Response
-        <$> v .: "Header"
-        <*> (let Object datao = v M.! "Data" in traverseKVs parseJSONParamType parseJSON datao)
-        <*> fmap toEnum (v .: "Status code")
-
 data Header = Header
     { hversion :: Version
     , hdevice :: Device
     , htimestamp :: POSIXTime
     } deriving (Eq, Show, Generic)
 
-instance FromJSON Header where
-    parseJSON = genericParseJSON camillaCase
-
 data Version
     = V1_25_2
     | V1_26_1
     | V1_28_0
      deriving (Bounded, Eq, Ord, Show)
-
-instance FromJSON Version where
-    parseJSON = withScientific "Version" $ pure . toEnum . truncate
 
 _versionNumber = [(V1_25_2, 1), (V1_26_1, 2), (V1_28_0, 3)]
 instance Enum Version where
@@ -139,11 +116,6 @@ data Device
     | BL_NET
      deriving (Eq, Show)
 
-instance FromJSON Device where
-    parseJSON = withText "Device" $ \t ->
-         let [(v, [])] = readHex $ unpack t
-         in pure $ toEnum v
-
 _deviceNumber = [(CoE, 0x7f), (UVR1611, 0x80), (CAN_MT, 0x81), (CAN_IO44, 0x82), (CAN_IO35, 0x83), (CAN_BC, 0x84), (CAN_EZ, 0x85), (CAN_TOUCH, 0x86), (UVR16x2, 0x87), (RSM610, 0x88), (CAN_IO45, 0x89), (CMI, 0x8a), (CAN_EZ2, 0x8b), (CAN_MTx2, 0x8c), (CAN_BC2, 0x8d), (BL_NET, 0xa3)]
 instance Enum Device where
     fromEnum d = fromJust $ lookup d _deviceNumber
@@ -156,37 +128,6 @@ data DataPoint = DataPoint
 
 instance Show DataPoint where
     show DataPoint{..} = "(" ++ show dnumber ++ ") " ++ show dvalue
-
-instance FromJSON DataPoint where
-    parseJSON = withObject "DataPoint" $ \d -> do
-        number <- d .: "Number"
-        ad <- d .: "AD"
-        v <- d .: "Value"
-        value <- v .: "Value"
-        unit <- v .: "Unit"
-        case ad :: Text of
-            "A" -> do
-                state <- optional $ truthy <$> v .: "State"
-                pure DataPoint
-                    { dnumber = number
-                    , dvalue =
-                        AnalogValue
-                        { avalue = value
-                        , vunit = unit
-                        , vstate = state
-                        }
-                    }
-            "D" ->
-                pure DataPoint
-                    { dnumber = number
-                    , dvalue =
-                        DigitalValue
-                        { bvalue = truthy value
-                        , vunit = unit
-                        }
-                    }
-      where
-        truthy = \case 1 -> True; 0 -> False
 
 data DataValue
     = AnalogValue { avalue :: Double
@@ -274,11 +215,6 @@ instance Show Unit where
             | u `elem` [Degree54, Degree56] -> "°"
         where _unitName = [(C1, "°C"), (Wm2, "W/m²"), (LH, "l/h"), (Min, "min"), (LImp, "l/Imp"), (K, "K"), (KW, "kW"), (KWh, "kWh"), (MWh, "MWh"), (V, "V"), (MA, "mA"), (Hr, "hr"), (Days, "Days"), (Imp, "Imp"), (Kohm, "kΩ"), (L, "l"), (KmH, "km/h"), (Hz, "Hz"), (LMin, "l/min"), (Bar, "bar"), (Km, "km"), (M, "m"), (Mm, "mm"), (M3, "m³"), (LD, "l/d"), (MS, "m/s"), (M3Min, "m³/min"), (M3H, "m³/h"), (M3D, "m³/d"), (MmMin, "mm/min"), (MmH, "mm/h"), (MmD, "mm/d"), (OnOff, "ON/OFF"), (NoYes, "NO/YES"), (Euro, "€"), (Dollar, "$"), (GM3, "g/m³"), (H, "h"), (A, "A"), (Mbar, "mbar"), (Pa, "Pa"), (Ppm, "ppm")]
 
-instance FromJSON Unit where
-    parseJSON = \case
-        String v -> pure . toEnum . read $ unpack v
-        _ -> fail "Unit must be a numeric string."
-
 data RAS
     = Auto
     | Standard
@@ -305,3 +241,78 @@ instance Enum Status where
     toEnum n
         | n <= 6 = fromJust $ revLookup n _statusNumber
         | otherwise = Error n
+
+parseJSONParamType :: (Monad m) => Text -> m JSONParamType
+parseJSONParamType = \case
+    "Inputs" -> pure Inputs
+    "Outputs" -> pure Outputs
+    "DL-Bus" -> pure DLInputs
+    "General" -> pure SystemGeneral
+    "Date" -> pure SystemDate
+    "Time" -> pure SystemTime
+    "Sun" -> pure SystemSun
+    "Logging Analog" -> pure LoggingAnalog
+    "Logging Digital" -> pure LoggingDigital
+    _ -> fail "jsonparam not supported."
+
+instance FromJSON JSONParamType where
+    parseJSON = withText "JSONParamType" parseJSONParamType
+
+instance FromJSONKey JSONParamType where
+    fromJSONKey = FromJSONKeyTextParser parseJSONParamType
+
+instance FromJSON Response where
+    parseJSON = withObject "Response" $ \v -> Response
+        <$> v .: "Header"
+        <*> (let Object datao = v M.! "Data" in traverseKVs parseJSONParamType parseJSON datao)
+        <*> fmap toEnum (v .: "Status code")
+
+instance FromJSON Header where
+    parseJSON = genericParseJSON camillaCase
+
+instance FromJSON Version where
+    parseJSON = withScientific "Version" $ pure . toEnum . truncate
+
+instance FromJSON Device where
+    parseJSON = withText "Device" $ \t ->
+         let [(v, [])] = readHex $ unpack t
+         in pure $ toEnum v
+
+instance FromJSON DataPoint where
+    parseJSON = withObject "DataPoint" $ \d -> do
+        number <- d .: "Number"
+        ad <- d .: "AD"
+        v <- d .: "Value"
+        value <- v .: "Value"
+        unit <- v .: "Unit"
+        case ad :: Text of
+            "A" -> do
+                state <- optional $ truthy <$> v .: "State"
+                pure DataPoint
+                    { dnumber = number
+                    , dvalue =
+                        AnalogValue
+                        { avalue = value
+                        , vunit = unit
+                        , vstate = state
+                        }
+                    }
+            "D" ->
+                pure DataPoint
+                    { dnumber = number
+                    , dvalue =
+                        DigitalValue
+                        { bvalue = truthy value
+                        , vunit = unit
+                        }
+                    }
+      where
+        truthy = \case 1 -> True; 0 -> False
+
+instance FromJSON Unit where
+    parseJSON = \case
+        String v -> pure . toEnum . read $ unpack v
+        _ -> fail "Unit must be a numeric string."
+
+toSqlRows :: Response -> M.HashMap JSONParamType [[SqlValue]]
+toSqlRows Response{..} = _

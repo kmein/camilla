@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE QuasiQuotes #-}
 import Camilla.Types
+import Camilla.HTTP
 import Data.Aeson.Types
 import Data.Aeson.QQ
 import Test.HUnit
@@ -189,7 +190,26 @@ parseResponse =
        "Status code":0
     } |]
 
+generateURL =
+    TestLabel "generateURL" $
+    TestCase $
+    [ "http://192.168.178.20/INCLUDE/api.cgi?jsonnode=1&jsonparam=La,Ld"
+    , "http://192.168.178.20/INCLUDE/api.cgi?jsonnode=2&jsonparam=I1,O2,O3"
+    , "http://192.168.178.20/INCLUDE/api.cgi?jsonnode=1&jsonparam=Ss"] @=?
+    map
+        (requestURL $ read "192.168.178.20")
+        [ Request
+              1
+              [ JSONParam LoggingAnalog Nothing
+              , JSONParam LoggingDigital Nothing]
+        , Request
+              2
+              [ JSONParam Inputs (Just 1)
+              , JSONParam Outputs (Just 2)
+              , JSONParam Outputs (Just 3)]
+        , Request 1 [JSONParam SystemSun Nothing]]
+
 main :: IO ()
 main = do
-    runTestTT $ TestList [parseHeader, parseData, parseResponse]
+    runTestTT $ TestList [parseHeader, parseData, parseResponse, generateURL]
     pure ()

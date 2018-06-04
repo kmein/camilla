@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 module Camilla.HTTP where
 
 import Network.Wreq hiding (Response)
@@ -23,14 +24,15 @@ defaultHTTPConfig ip =
     , cpassword = "admin"
     }
 
-requestURL ip req = endpoint ++ "?jsonnode=" ++ show (jsonnode req) ++ "&jsonparam=" ++ show (jsonparam req)
+requestURL :: IP -> Request -> String
+requestURL ip Request{..} = endpoint ++ "?jsonnode=" ++ show jsonnode ++ "&jsonparam=" ++ show jsonparam
     where endpoint = "http://" ++ show ip ++ "/INCLUDE/api.cgi"
 
 readCMI :: HTTPConfig -> Request -> IO Response
-readCMI conf req = do
+readCMI HTTPConfig{..} req = do
     httpResponse <-
         getWith
-            (defaults & auth ?~ basicAuth (cusername conf) (cpassword conf))
-            (requestURL (cip conf) req)
+            (defaults & auth ?~ basicAuth cusername cpassword)
+            (requestURL cip req)
     let json = httpResponse ^. responseBody
     either fail pure $ eitherDecode json

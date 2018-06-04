@@ -30,6 +30,7 @@ dependencies:
 - time
 - unordered-containers
 - wreq
+- HDBC
 
 library:
   source-dirs: src
@@ -44,6 +45,7 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - camilla
+    - optparse-applicative
 
 tests:
   camilla-test:
@@ -57,4 +59,3 @@ tests:
     - camilla
     - aeson-qq
     - HUnit
-    - unordered-containers
