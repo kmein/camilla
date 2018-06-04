@@ -1,6 +1,7 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Camilla.Types
   ( Request(..)
@@ -11,7 +12,6 @@ module Camilla.Types
   , Version(..)
   , Device(..)
   , DataPoint(..)
-  , Data(..)
   , DataValue(..)
   , Unit(..)
   , RAS(..)
@@ -42,7 +42,7 @@ data Request = Request
 
 data JSONParam = JSONParam
     { ptype :: JSONParamType
-    , pnumber :: Maybe Int
+    , pnumber :: Maybe Natural
     } deriving (Eq)
 
 instance Show JSONParam where
@@ -79,16 +79,22 @@ parseJSONParamType = \case
     "Outputs" -> pure Outputs
     _ -> fail "jsonparam not defined."
 
+instance FromJSON JSONParamType where
+    parseJSON = withText "JSONParamType" parseJSONParamType
+
+instance FromJSONKey JSONParamType where
+    fromJSONKey = FromJSONKeyTextParser parseJSONParamType
+
 data Response = Response
     { rheader :: Header
-    , rdata :: Data
+    , rdata :: M.HashMap JSONParamType [DataPoint]
     , rstatus :: Status
     } deriving (Eq, Show)
 
 instance FromJSON Response where
     parseJSON = withObject "Response" $ \v -> Response
         <$> v .: "Header"
-        <*> v .: "Data"
+        <*> (let Object datao = v M.! "Data" in traverseKVs parseJSONParamType parseJSON datao)
         <*> fmap toEnum (v .: "Status code")
 
 data Header = Header
@@ -112,7 +118,7 @@ instance FromJSON Version where
 _versionNumber = [(V1_25_2, 1), (V1_26_1, 2), (V1_28_0, 3)]
 instance Enum Version where
     fromEnum v = fromJust $ lookup v _versionNumber
-    toEnum n = fromJust $ lookup n $ map (\(v, x) -> (x, v)) _versionNumber
+    toEnum n = fromJust $ revLookup n _versionNumber
 
 data Device
     = CoE
@@ -141,19 +147,15 @@ instance FromJSON Device where
 _deviceNumber = [(CoE, 0x7f), (UVR1611, 0x80), (CAN_MT, 0x81), (CAN_IO44, 0x82), (CAN_IO35, 0x83), (CAN_BC, 0x84), (CAN_EZ, 0x85), (CAN_TOUCH, 0x86), (UVR16x2, 0x87), (RSM610, 0x88), (CAN_IO45, 0x89), (CMI, 0x8a), (CAN_EZ2, 0x8b), (CAN_MTx2, 0x8c), (CAN_BC2, 0x8d), (BL_NET, 0xa3)]
 instance Enum Device where
     fromEnum d = fromJust $ lookup d _deviceNumber
-    toEnum n = fromJust $ lookup n $ map (\(d, x) -> (x, d)) _deviceNumber
-
-newtype Data = Data
-    { dvalues :: M.HashMap JSONParamType [DataPoint]
-    } deriving (Eq, Show)
-
-instance FromJSON Data where
-    parseJSON = withObject "Data" $ fmap Data . traverseKVs parseJSONParamType parseJSON
+    toEnum n = fromJust $ revLookup n _deviceNumber
 
 data DataPoint = DataPoint
     { dnumber :: Natural
     , dvalue :: DataValue
-    } deriving (Eq, Show, Generic)
+    } deriving (Eq, Generic)
+
+instance Show DataPoint where
+    show DataPoint{..} = "(" ++ show dnumber ++ ") " ++ show dvalue
 
 instance FromJSON DataPoint where
     parseJSON = withObject "DataPoint" $ \d -> do
@@ -192,7 +194,14 @@ data DataValue
                   , vstate :: Maybe Bool}
     | DigitalValue { bvalue :: Bool
                    , vunit :: Unit}
-     deriving (Eq, Show, Generic)
+     deriving (Eq, Generic)
+
+instance Show DataValue where
+    show = \case
+        AnalogValue {..} ->
+            show avalue ++
+            " " ++ show vunit ++ maybe "" (\b -> " (" ++ show b ++ ")") vstate
+        DigitalValue {..} -> show bvalue ++ " " ++ show vunit
 
 data Unit
     = Unit0
@@ -253,7 +262,7 @@ data Unit
 _unitNumber = [(Unit0, 0), (C1, 1), (Wm2, 2), (LH, 3), (Sec4, 4), (Min, 5), (LImp, 6), (K, 7), (Percent8, 8), (KW, 10), (KWh, 11), (MWh, 12), (V, 13), (MA, 14), (Hr, 15), (Days, 16), (Imp, 17), (Kohm, 18), (L, 19), (KmH, 20), (Hz, 21), (LMin, 22), (Bar, 23), (Unit24, 24), (Km, 25), (M, 26), (Mm, 27), (M3, 28), (LD, 35), (MS, 36), (M3Min, 37), (M3H, 38), (M3D, 39), (MmMin, 40), (MmH, 41), (MmD, 42), (OnOff, 43), (NoYes, 44), (Euro, 50), (Dollar, 51), (GM3, 52), (Unit53, 53), (Degree54, 54), (Degree56, 56), (Sec57, 57), (Unit58, 58), (Percent59, 59), (H, 60), (A, 63), (Mbar, 65), (Pa, 66), (Ppm, 67)] ++ map (\r -> (C46 r, 46)) [minBound..maxBound]
 instance Enum Unit where
     fromEnum u = fromJust $ lookup u _unitNumber
-    toEnum n = fromJust $ lookup n $ map (\(u, x) -> (x, u)) _unitNumber
+    toEnum n = fromJust $ revLookup n _unitNumber
 
 instance Show Unit where
     show = \case
@@ -294,5 +303,5 @@ instance Enum Status where
         | Error n <- s = n
         | otherwise = fromJust $ lookup s _statusNumber
     toEnum n
-        | n <= 6 = fromJust $ lookup n $ map (\(s, x) -> (x, s)) _statusNumber
+        | n <= 6 = fromJust $ revLookup n _statusNumber
         | otherwise = Error n

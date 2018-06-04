@@ -5,6 +5,7 @@ import Camilla.Types
 import Data.Aeson.Types
 import Data.Aeson.QQ
 import Test.HUnit
+import qualified Data.HashMap.Strict as M
 
 parseHeader =
     TestLabel "parseHeader" $
@@ -15,7 +16,7 @@ parseHeader =
         , hdevice = CAN_EZ2
         , htimestamp = 1481538940
         } @=?
-    parse parseJSON [aesonQQ| {
+    fromJSON [aesonQQ| {
         "Version":1,
         "Device":"8B",
         "Timestamp":1481538940
@@ -25,48 +26,46 @@ parseData =
     TestLabel "parseData" $
     TestCase $
     Success
-        (Data
-             [ ( Inputs
-               , [ DataPoint
-                       1
-                       AnalogValue
-                       { avalue = 22.7
-                       , vunit = C1
-                       , vstate = Nothing
-                       }])
-             , ( Outputs
-               , [ DataPoint
-                       1
-                       AnalogValue
-                       { vstate = Just False
-                       , avalue = 0
-                       , vunit = Unit0
-                       }])]) @=?
-    parse
-        parseJSON
+        ([ ( Inputs
+           , [ DataPoint
+                   1
+                   AnalogValue
+                   { avalue = 22.7
+                   , vunit = C1
+                   , vstate = Nothing
+                   }])
+         , ( Outputs
+           , [ DataPoint
+                   1
+                   AnalogValue
+                   { vstate = Just False
+                   , avalue = 0
+                   , vunit = Unit0
+                   }])] :: M.HashMap JSONParamType [DataPoint]) @=?
+    fromJSON
         [aesonQQ| {
-       "Inputs":[
-          {
-             "Number":1,
-             "AD":"A",
-             "Value":{
-                "Value":22.7,
-                "Unit":"1"
-             }
-          }
-       ],
-       "Outputs":[
-          {
-             "Number":1,
-             "AD":"A",
-             "Value":{
-                "State":0,
-                "Value":0,
-                "Unit":"0"
-             }
-          }
-       ]
-    } |]
+           "Inputs":[
+              {
+                 "Number":1,
+                 "AD":"A",
+                 "Value":{
+                    "Value":22.7,
+                    "Unit":"1"
+                 }
+              }
+           ],
+           "Outputs":[
+              {
+                 "Number":1,
+                 "AD":"A",
+                 "Value":{
+                    "State":0,
+                    "Value":0,
+                    "Unit":"0"
+                 }
+              }
+           ]
+        } |]
 
 
 parseResponse =
@@ -81,45 +80,51 @@ parseResponse =
             , htimestamp = 1481546305
             }
         , rdata =
-            Data
-                [ ( Inputs
-                  , [ DataPoint 1
-                          AnalogValue
-                          { avalue = 92
-                          , vunit = C1
-                          , vstate = Nothing
-                          }
-                    , DataPoint 2
-                          AnalogValue
-                          { avalue = 71.2
-                          , vunit = C1
-                          , vstate = Nothing
-                          }
-                    , DataPoint 14
-                          AnalogValue
-                          { avalue = 45.8
-                          , vunit = C46 Auto
-                          , vstate = Nothing
-                          }])
-                , ( Outputs
-                  , [ DataPoint 1
-                          DigitalValue
-                          { bvalue = True
-                          , vunit = OnOff
-                          }
-                    , DataPoint 2
-                          DigitalValue
-                          { bvalue = False
-                          , vunit = OnOff
-                          }
-                    , DataPoint 7
-                          DigitalValue
-                          { bvalue = False
-                          , vunit = OnOff
-                          }])]
+            [ ( Inputs
+              , [ DataPoint
+                      1
+                      AnalogValue
+                      { avalue = 92
+                      , vunit = C1
+                      , vstate = Nothing
+                      }
+                , DataPoint
+                      2
+                      AnalogValue
+                      { avalue = 71.2
+                      , vunit = C1
+                      , vstate = Nothing
+                      }
+                , DataPoint
+                      14
+                      AnalogValue
+                      { avalue = 45.8
+                      , vunit = C46 Auto
+                      , vstate = Nothing
+                      }])
+            , ( Outputs
+              , [ DataPoint
+                      1
+                      DigitalValue
+                      { bvalue = True
+                      , vunit = OnOff
+                      }
+                , DataPoint
+                      2
+                      DigitalValue
+                      { bvalue = False
+                      , vunit = OnOff
+                      }
+                , DataPoint
+                      7
+                      DigitalValue
+                      { bvalue = False
+                      , vunit = OnOff
+                      }])]
         , rstatus = Ok
         } @=?
-    parse parseJSON [aesonQQ| {
+    fromJSON
+        [aesonQQ| {
        "Header":{
           "Version":1,
           "Device":"87",

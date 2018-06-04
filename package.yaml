@@ -10,7 +10,7 @@ extra-source-files:
 - README.md
 
 # Metadata used when publishing your package
-synopsis:            Haskell binding to the CMI JSON API by Technische Alternative GmbH
+synopsis:            Haskell binding to the CMI JSON API (v3) by Technische Alternative GmbH
 category:            JSON
 
 # To avoid duplicated efforts in documentation and dealing with the
@@ -24,11 +24,12 @@ dependencies:
 - aeson-casing
 - bytestring
 - hashable
+- iproute
+- lens
 - text
 - time
 - unordered-containers
 - wreq
-- lens
 
 library:
   source-dirs: src
