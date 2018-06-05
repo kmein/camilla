@@ -29,10 +29,9 @@ requestURL ip Request{..} = endpoint ++ "?jsonnode=" ++ show jsonnode ++ "&jsonp
     where endpoint = "http://" ++ show ip ++ "/INCLUDE/api.cgi"
 
 readCMI :: HTTPConfig -> Request -> IO Response
-readCMI HTTPConfig{..} req = do
+readCMI HTTPConfig {..} req = do
     httpResponse <-
-        getWith
-            (defaults & auth ?~ basicAuth cusername cpassword)
-            (requestURL cip req)
+        getWith (defaults & auth ?~ basicAuth cusername cpassword) $
+        requestURL cip req
     let json = httpResponse ^. responseBody
     either fail pure $ eitherDecode json

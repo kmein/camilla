@@ -5,6 +5,7 @@ import Camilla.Types
 import Camilla.HTTP
 import Data.Aeson.Types
 import Data.Aeson.QQ
+import Database.HDBC
 import Test.HUnit
 import qualified Data.HashMap.Strict as M
 
@@ -209,7 +210,51 @@ generateURL =
               , JSONParam Outputs (Just 3)]
         , Request 1 [JSONParam SystemSun Nothing]]
 
+generateSQL =
+    TestLabel "generateSQL" $
+    TestCase $
+    [ [ SqlString "1.25.2"
+      , SqlString "CMI"
+      , SqlPOSIXTime 1
+      , SqlString "I"
+      , SqlInteger 1
+      , SqlDouble 1.2
+      , SqlString "m"]
+    , [ SqlString "1.25.2"
+      , SqlString "CMI"
+      , SqlPOSIXTime 1
+      , SqlString "O"
+      , SqlInteger 2
+      , SqlBool True
+      , SqlString "NO/YES"]] @=?
+    toSqlRows
+        Response
+        { rheader =
+            Header
+            { hversion = V1_25_2
+            , hdevice = CMI
+            , htimestamp = 1
+            }
+        , rdata =
+            [ ( Inputs
+              , [ DataPoint
+                      1
+                      AnalogValue
+                      { avalue = 1.2
+                      , vunit = M
+                      , vstate = Nothing
+                      }])
+            , ( Outputs
+              , [ DataPoint
+                      2
+                      DigitalValue
+                      { bvalue = True
+                      , vunit = NoYes
+                      }])]
+        , rstatus = Ok
+        }
+
 main :: IO ()
 main = do
-    runTestTT $ TestList [parseHeader, parseData, parseResponse, generateURL]
+    runTestTT $ TestList [parseHeader, parseData, parseResponse, generateURL, generateSQL]
     pure ()
