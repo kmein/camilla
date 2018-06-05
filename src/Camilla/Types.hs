@@ -331,7 +331,7 @@ toSqlRows Response {..} =
       toSql (show $ hdevice rheader) :
       posixToSql (htimestamp rheader) :
       toSql (show paramType) :
-      toSql (fromIntegral dnumber :: Int) :
+      nToSql dnumber :
       case dvalue of
         AnalogValue {..} -> [toSql avalue, toSql $ show vunit]
         DigitalValue {..} -> [toSql bvalue, toSql $ show vunit]

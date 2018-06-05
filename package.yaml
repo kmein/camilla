@@ -31,6 +31,7 @@ dependencies:
 - unordered-containers
 - wreq
 - HDBC
+- HDBC-sqlite3
 
 library:
   source-dirs: src
