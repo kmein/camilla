@@ -321,16 +321,18 @@ instance FromJSON Unit where
         String v -> pure . toEnum . read $ unpack v
         _ -> fail "Unit must be a numeric string."
 
--- version: str, device: str, time: posixtime, dp-number: int, value: double/bool, unit: str
-toSqlRows :: Response -> M.HashMap JSONParamType [[SqlValue]]
-toSqlRows Response {..} = fmap (map fromDataPoint) rdata
+-- version: str, device: str, time: posixtime, jsonparam: str, dp-number: int, value: double/bool, unit: str
+toSqlRows :: Response -> [[SqlValue]]
+toSqlRows Response {..} =
+  concatMap (uncurry (map . fromDataPoint)) $ M.toList rdata
   where
-    fromDataPoint DataPoint {..} =
+    fromDataPoint paramType DataPoint {..} =
       toSql (show $ hversion rheader) :
       toSql (show $ hdevice rheader) :
       posixToSql (htimestamp rheader) :
+      toSql (show paramType) :
       toSql (fromIntegral dnumber :: Int) :
       case dvalue of
-        AnalogValue{..} -> [toSql avalue, toSql $ show vunit]
-        DigitalValue{..} -> [toSql bvalue, toSql $ show vunit]
+        AnalogValue {..} -> [toSql avalue, toSql $ show vunit]
+        DigitalValue {..} -> [toSql bvalue, toSql $ show vunit]
 
