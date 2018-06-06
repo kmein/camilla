@@ -5,7 +5,7 @@ import Camilla.HTTP
 import Camilla.Types
 import Control.Concurrent (threadDelay)
 import Control.Exception (bracket)
-import Control.Monad (forever)
+import Control.Monad (forever, unless, void)
 import Data.Monoid ((<>))
 import Database.HDBC
 import Database.HDBC.Sqlite3 (connectSqlite3)
@@ -34,18 +34,21 @@ readWithInterval secs conf req f = forever $ do
     f =<< readCMI conf req
     threadDelay $ truncate $ secs * 1000000
 
-createTable :: (IConnection conn) => conn -> IO Integer
+createTable :: (IConnection conn) => conn -> IO ()
 createTable conn =
+    void $
     run
         conn
         "CREATE TABLE cmi (id ROWID, version TEXT NOT NULL, device TEXT NOT NULL, timestamp INTEGER, jsonparam TEXT NOT NULL, number INTEGER, value REAL, unit TEXT NOT NULL)"
         []
 
+
 main :: IO ()
 main = do
     (conf, dbPath) <- execParser opts
     bracket (connectSqlite3 dbPath) disconnect $ \conn -> do
-        createTable conn
+        dbTables <- getTables conn
+        unless ("cmi" `elem` dbTables) $ createTable conn
         insertRow <-
             prepare
                 conn
