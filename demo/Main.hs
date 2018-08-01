@@ -13,7 +13,7 @@ import Text.Printf
 report :: Response -> Box
 report = hsep 2 left . map toColumn . toList . rdata
   where
-    toColumn (k, v) = align center1 center1 (text $ show k) /+/ vcat left (map toRow v)
+    toColumn (k, v) = text (show k) /+/ vcat left (map toRow v)
     toRow DataPoint {..} =
         text (printf "%2d" dnumber ++ ":") <+> text val <+> text (show $ vunit dvalue)
       where
