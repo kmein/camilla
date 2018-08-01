@@ -198,7 +198,7 @@ generateURL =
     , "http://192.168.178.20/INCLUDE/api.cgi?jsonnode=2&jsonparam=I1,O2,O3"
     , "http://192.168.178.20/INCLUDE/api.cgi?jsonnode=1&jsonparam=Ss"] @=?
     map
-        (requestURL $ read "192.168.178.20")
+        (apiURL $ read "192.168.178.20")
         [ Request
               1
               [ JSONParam LoggingAnalog Nothing
