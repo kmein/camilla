@@ -7,6 +7,7 @@ import Camilla.Types
 import Data.HashMap.Strict (toList)
 import Data.Monoid ((<>))
 import Options.Applicative
+import System.Console.ANSI (clearScreen)
 import Text.PrettyPrint.Boxes hiding ((<>))
 import Text.Printf
 
@@ -38,6 +39,18 @@ confParser =
 main :: IO ()
 main = do
     conf <- execParser opts
-    readCMIWithInterval 30 conf req $ printBox . report
-    where req = Request 1 [JSONParam Inputs Nothing, JSONParam Outputs Nothing]
-          opts = info (confParser <**> helper) fullDesc
+    readCMIWithInterval 30 conf req $ \resp -> do
+        clearScreen
+        printBox $ report resp
+  where
+    req =
+        Request
+            1
+            [ JSONParam Inputs Nothing
+            , JSONParam Outputs Nothing
+            , JSONParam SystemGeneral Nothing
+            , JSONParam SystemDate Nothing
+            , JSONParam SystemTime Nothing
+            , JSONParam SystemSun Nothing
+            , JSONParam SystemPower Nothing]
+    opts = info (confParser <**> helper) fullDesc

@@ -51,6 +51,7 @@ executables:
     source-dirs:         demo
     dependencies:
     - camilla
+    - ansi-terminal
     - boxes
     - optparse-applicative
 

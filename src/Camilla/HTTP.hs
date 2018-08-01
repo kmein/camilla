@@ -38,8 +38,8 @@ expertURL :: IP -> String -> String
 expertURL ip password = endpoint ++ "?changeuserx2=010257ff" ++ password
     where endpoint = "http://" ++ show ip ++ "/INCLUDE/devpagexUser.cgi"
 
-changeURL :: IP -> String -> Either Int Double -> String
-changeURL ip adr x = endpoint ++ "?changeadrx2=" ++ adr ++ "&changetox2=" ++ either show show x
+changeURL :: IP -> String -> Double -> String
+changeURL ip adr x = endpoint ++ "?changeadrx2=" ++ adr ++ "&changetox2=" ++ show x
     where endpoint = "http://" ++ show ip ++ "/INCLUDE/change.cgi"
 
 authCMI :: HTTPConfig -> String -> IO CookieJar
@@ -64,7 +64,7 @@ authCMI HTTPConfig {..} password = do
                   False
                   False]
 
-writeCMI :: HTTPConfig -> CookieJar -> String -> Either Int Double -> IO ()
+writeCMI :: HTTPConfig -> CookieJar -> String -> Double -> IO ()
 writeCMI HTTPConfig {..} jar adr x =
     void $
     getWith

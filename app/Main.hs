@@ -13,7 +13,7 @@ import Database.HDBC.Sqlite3 (connectSqlite3)
 import Options.Applicative
 import qualified Network.Wreq.Session as S
 
-data Action = Write String String (Either Int Double) | ReadTo FilePath
+data Action = Write String String Double | ReadTo FilePath
 
 confParser :: Parser HTTPConfig
 confParser =
