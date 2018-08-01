@@ -34,7 +34,7 @@ actionParser =
   where
     writeParser =
         Write <$>
-        optional (strOption (long "expert-password" <> metavar "PASS")) <*>
+        optional (strOption (long "expert-password" <> metavar "PASS" <> value "128")) <*>
         strArgument (metavar "ADDR") <*>
         argument auto (metavar "X")
     readToParser =
@@ -62,7 +62,7 @@ main = do
     (conf, action) <- execParser opts
     case action of
         Write passwd adr x -> do
-            auth <- authCMI conf (fromMaybe "128" passwd)
+            auth <- authCMI conf passwd
             writeCMI conf auth adr x
         ReadTo dbPath ->
             bracket (connectSqlite3 dbPath) disconnect $ \conn -> do
