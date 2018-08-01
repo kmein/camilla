@@ -11,11 +11,11 @@ import Text.PrettyPrint.Boxes hiding ((<>))
 import Text.Printf
 
 report :: Response -> Box
-report = hcat left . map toColumn . toList . rdata
+report = hsep 2 left . map toColumn . toList . rdata
   where
     toColumn (k, v) = text (show k) /+/ vcat left (map toRow v)
     toRow DataPoint {..} =
-        text (printf "%02d" dnumber ++ ":") <+> text val <+> text (show $ vunit dvalue)
+        text (printf "%2d" dnumber ++ ":") <+> text val <+> text (show $ vunit dvalue)
       where
         val =
             case dvalue of
