@@ -5,7 +5,7 @@ import Camilla.HTTP
 import Camilla.Types
 import Control.Concurrent (threadDelay)
 import Control.Exception (bracket)
-import Control.Monad (forever, unless, void)
+import Control.Monad (unless, void)
 import Data.Maybe (fromMaybe)
 import Data.Monoid ((<>))
 import Database.HDBC
@@ -13,7 +13,7 @@ import Database.HDBC.Sqlite3 (connectSqlite3)
 import Options.Applicative
 import qualified Network.Wreq.Session as S
 
-data Action = Write (Maybe String) String (Either Int Double) | ReadTo FilePath
+data Action = Write String String (Either Int Double) | ReadTo FilePath
 
 confParser :: Parser HTTPConfig
 confParser =
@@ -34,7 +34,7 @@ actionParser =
   where
     writeParser =
         Write <$>
-        optional (strOption (long "expert-password" <> metavar "PASS" <> value "128")) <*>
+        strOption (long "expert-password" <> metavar "PASS" <> value "128") <*>
         strArgument (metavar "ADDR") <*>
         argument auto (metavar "X")
     readToParser =
@@ -42,12 +42,6 @@ actionParser =
         strOption
             (long "database" <> short 'd' <> metavar "PATH" <>
              help "output database path")
-
--- reliable interval: 24.5 s
-readWithInterval :: Double -> HTTPConfig -> Request -> (Response -> IO a) -> IO ()
-readWithInterval secs conf req f = forever $ do
-    f =<< readCMI conf req
-    threadDelay $ truncate $ secs * 1000000
 
 createTable :: (IConnection conn) => conn -> IO ()
 createTable conn =
@@ -72,7 +66,7 @@ main = do
                     prepare
                         conn
                         "INSERT INTO cmi (version,device,timestamp,jsonparam,number,value,unit) VALUES (?,?,?,?,?,?,?)"
-                readWithInterval 24.5 conf req $ \resp -> do
+                readCMIWithInterval 24.5 conf req $ \resp -> do
                     print resp
                     executeMany insertRow $ toSqlRows resp
                     commit conn

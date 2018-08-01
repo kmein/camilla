@@ -3,18 +3,18 @@
 module Camilla.HTTP where
 
 import Camilla.Types
-
+import Control.Concurrent (threadDelay)
 import Control.Lens
-import Control.Monad (void)
+import Control.Monad (forever, void)
 import Data.Aeson
-import qualified Data.ByteString as B (ByteString, pack, unpack)
-import qualified Data.ByteString.Lazy as BL (pack, unpack)
-import qualified Data.ByteString.Char8 as BC (pack, unpack)
 import Data.IP (IP)
 import Data.Text (pack)
 import Data.Time.Clock
 import Network.HTTP.Client (CookieJar, createCookieJar, Cookie(..))
 import Network.Wreq hiding (Response)
+import qualified Data.ByteString as B (ByteString, pack, unpack)
+import qualified Data.ByteString.Char8 as BC (pack, unpack)
+import qualified Data.ByteString.Lazy as BL (pack, unpack)
 
 data HTTPConfig = HTTPConfig
     { cip :: IP
@@ -78,3 +78,9 @@ readCMI HTTPConfig {..} req = do
         apiURL cip req
     let json = httpResponse ^. responseBody
     either fail pure $ eitherDecode json
+
+-- reliable interval: 24.5 s
+readCMIWithInterval :: Double -> HTTPConfig -> Request -> (Response -> IO a) -> IO ()
+readCMIWithInterval secs conf req f = forever $ do
+    f =<< readCMI conf req
+    threadDelay $ truncate $ secs * 1000000

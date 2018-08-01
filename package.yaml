@@ -51,7 +51,7 @@ executables:
     source-dirs:         demo
     dependencies:
     - camilla
-    - brick
+    - boxes
     - optparse-applicative
 
 tests:
