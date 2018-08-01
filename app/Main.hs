@@ -27,10 +27,16 @@ confParser =
         (long "pass" <> short 'p' <> metavar "PASS" <> help "CMI password" <> value "admin")
 
 actionParser :: Parser Action
-actionParser = subparser (command "read" (info readToParser (progDesc "Read from CMI")) <> command "write" (info writeParser (progDesc "Write to CMI")))
+actionParser =
+    subparser
+        (command "read" (info readToParser (progDesc "Read from CMI")) <>
+         command "write" (info writeParser (progDesc "Write to CMI")))
   where
     writeParser =
-        Write <$> optional (strOption (long "expert-password" <> metavar "PASS")) <*> strArgument (metavar "ADDR") <*> argument auto (metavar "X")
+        Write <$>
+        optional (strOption (long "expert-password" <> metavar "PASS")) <*>
+        strArgument (metavar "ADDR") <*>
+        argument auto (metavar "X")
     readToParser =
         ReadTo <$>
         strOption
@@ -56,9 +62,8 @@ main = do
     (conf, action) <- execParser opts
     case action of
         Write passwd adr x -> do
-            sess <- S.newSession
-            authCMI sess conf (fromMaybe "128" passwd)
-            writeCMI sess conf adr x
+            auth <- authCMI conf (fromMaybe "128" passwd)
+            writeCMI conf auth adr x
         ReadTo dbPath ->
             bracket (connectSqlite3 dbPath) disconnect $ \conn -> do
                 dbTables <- getTables conn

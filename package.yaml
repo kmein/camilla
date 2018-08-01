@@ -20,18 +20,20 @@ description:         Please see the README on GitHub at <https://github.com/kmei
 
 dependencies:
 - base >= 4.7 && < 5
+- HDBC
+- HDBC-sqlite3
 - aeson
 - aeson-casing
 - bytestring
 - hashable
+- http-client
 - iproute
 - lens
 - text
 - time
+- time
 - unordered-containers
 - wreq
-- HDBC
-- HDBC-sqlite3
 
 library:
   source-dirs: src
@@ -40,12 +42,16 @@ executables:
   camilla-exe:
     main:                Main.hs
     source-dirs:         app
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
     dependencies:
     - camilla
+    - optparse-applicative
+
+  demo:
+    main:                Main.hs
+    source-dirs:         demo
+    dependencies:
+    - camilla
+    - brick
     - optparse-applicative
 
 tests:
