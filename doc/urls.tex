@@ -3,10 +3,9 @@
 \usepackage[ngerman]{babel}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage{alltt}
-\usepackage[scaled]{berasans,beramono}
+\usepackage{array}
 
-\usecolortheme{seagull}
+\usecolortheme{beaver}
 \setbeamertemplate{navigation symbols}{}
 
 \begin{document}
@@ -15,20 +14,20 @@
     \frametitle{Befehle der CMI-API}
     \begin{exampleblock}{Lesen}
         Diese Anfrage liest die Eingänge, Ausgänge, Allgemein-, Datums-, Zeit-, Sonnen- und Strom-Systeminformationen über das CMI aus.
-        \begin{alltt}
-            http://cmisim1/INCLUDE/api.cgi\\
-            ~~?jsonnode=1\\
-            ~~\&jsonparam=\alert{I,O,Sg,Sd,St,Ss,Sp}
-        \end{alltt}
+        \begin{table}\begin{tabular}{>{\ttfamily}l|l}
+            http://cmisim1/INCLUDE/api.cgi & Befehl (konstant) \\
+            ~~?jsonnode=1 & angefragtes Gerät (konstant) \\
+            ~~\&jsonparam=\alert{I,O,Sg,Sd,St,Ss,Sp} & angefragte Parameter
+        \end{tabular}\end{table}
     \end{exampleblock}
 
     \begin{exampleblock}{Schreiben}
-        Diese Anfrage ändert Ausgang 5 zu ,,Hand/EIN``.
-        \begin{alltt}
-            http://cmisim1/INCLUDE/change.cgi\\
-            ~~?changeadrx2=\alert{01000440DA1200}\\
-            ~~\&changetox2=\alert{1}
-        \end{alltt}
+        Diese Anfrage schaltet Ausgang 5 ein.
+        \begin{table}\begin{tabular}{>{\ttfamily}l|l}
+            http://cmisim1/INCLUDE/change.cgi & Befehl (konstant) \\
+            ~~?changeadrx2=\alert{01000440DA1200} & Adresse von Ausgang 5 \\
+            ~~\&changetox2=\alert{1} & Wert (\texttt{1} = ,,ein``)
+        \end{tabular}\end{table}
     \end{exampleblock}
 \end{frame}
 
