@@ -1,4 +1,7 @@
 .stack-work/
 cmi.db
 camilla.cabal
+doc/urls.*
+!doc/urls.tex
+!doc/urls.pdf
 *~

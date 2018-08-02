@@ -1,0 +1,35 @@
+\documentclass{beamer}
+
+\usepackage[ngerman]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{alltt}
+\usepackage[scaled]{berasans,beramono}
+
+\usecolortheme{seagull}
+\setbeamertemplate{navigation symbols}{}
+
+\begin{document}
+
+\begin{frame}
+    \frametitle{Befehle der CMI-API}
+    \begin{exampleblock}{Lesen}
+        Diese Anfrage liest die Eingänge, Ausgänge, Allgemein-, Datums-, Zeit-, Sonnen- und Strom-Systeminformationen über das CMI aus.
+        \begin{alltt}
+            http://cmisim1/INCLUDE/api.cgi\\
+            ~~?jsonnode=1\\
+            ~~\&jsonparam=\alert{I,O,Sg,Sd,St,Ss,Sp}
+        \end{alltt}
+    \end{exampleblock}
+
+    \begin{exampleblock}{Schreiben}
+        Diese Anfrage ändert Ausgang 5 zu ,,Hand/EIN``.
+        \begin{alltt}
+            http://cmisim1/INCLUDE/change.cgi\\
+            ~~?changeadrx2=\alert{01000440DA1200}\\
+            ~~\&changetox2=\alert{1}
+        \end{alltt}
+    \end{exampleblock}
+\end{frame}
+
+\end{document}
