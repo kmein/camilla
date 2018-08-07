@@ -6,13 +6,14 @@ import Camilla.HTTP
 import Camilla.Types
 import Data.HashMap.Strict (toList)
 import Data.Monoid ((<>))
+import Data.Time.Clock
 import Options.Applicative
 import System.Console.ANSI (clearScreen)
 import Text.PrettyPrint.Boxes hiding ((<>))
 import Text.Printf
 
-report :: Response -> Box
-report = hsep 2 left . map toColumn . toList . rdata
+report :: UTCTime -> Response -> Box
+report time Response{..} = text (show time) /+/ hsep 2 left (map toColumn $ toList rdata)
   where
     toColumn (k, v) = text (show k) /+/ vcat left (map toRow v)
     toRow DataPoint {..} =
@@ -41,7 +42,8 @@ main = do
     conf <- execParser opts
     readCMIWithInterval 30 conf req $ \resp -> do
         clearScreen
-        printBox $ report resp
+        time <- getCurrentTime
+        printBox $ report time resp
   where
     req =
         Request
