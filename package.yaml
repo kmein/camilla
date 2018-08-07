@@ -41,7 +41,7 @@ library:
 executables:
   cmi:
     main:                Main.hs
-    source-dirs:         app
+    source-dirs:         cmi
     dependencies:
     - camilla
     - optparse-applicative
